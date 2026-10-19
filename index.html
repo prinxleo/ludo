@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>IshqLudo 3D • Couple Ludo Classic, Live Chat & Camera</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f0a1e;
+      color: #ffffff;
+    }
+    .font-display { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+    #bg3d {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .ios-glass {
+      background: linear-gradient(145deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 20px 45px -12px rgba(8, 5, 24, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    }
+    .ios-glass-dark {
+      background: linear-gradient(155deg, rgba(22, 16, 42, 0.88) 0%, rgba(12, 9, 26, 0.8) 100%);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    }
+    .ios-pill-btn {
+      background: linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.12) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.5);
+      transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+    }
+    .ios-pill-btn:hover { transform: translateY(-1px) scale(1.02); }
+    .ios-pill-btn:active { transform: translateY(1px) scale(0.96); }
+    .ios-primary-btn {
+      background: linear-gradient(135deg, #ff4d8d 0%, #ff758f 50%, #fbbf24 100%);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 10px 24px -4px rgba(255, 77, 141, 0.65), 0 4px 0 #be185d, inset 0 1px 1px rgba(255, 255, 255, 0.75);
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+    }
+    .ios-primary-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 4px 12px -2px rgba(255, 77, 141, 0.55), 0 1px 0 #be185d;
+    }
+    .dice-3d-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: linear-gradient(145deg, #ffffff 0%, #ffe4e6 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 7px 0 #be185d, 0 14px 28px rgba(255, 77, 141, 0.5), inset 0 2px 3px #ffffff;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+    .dice-3d-btn:active {
+      transform: translateY(4px) scale(0.95);
+      box-shadow: 0 3px 0 #be185d, 0 8px 16px rgba(255, 77, 141, 0.4);
+    }
+    @keyframes diceSpin3D {
+      0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+      30%  { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg) scale(1.18); }
+      65%  { transform: rotateX(300deg) rotateY(240deg) rotateZ(135deg) scale(1.12); }
+      100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg) scale(1); }
+    }
+    .dice-rolling { animation: diceSpin3D 0.48s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes floatReaction {
+      0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+      20%  { transform: translateY(-20px) scale(1.15); opacity: 1; }
+      80%  { transform: translateY(-85px) scale(1); opacity: 0.92; }
+      100% { transform: translateY(-120px) scale(0.85); opacity: 0; }
+    }
+    .reaction-float { animation: floatReaction 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    video { object-fit: cover; }
+    .mirror-video { transform: scaleX(-1); }
+    #chatHistoryList::-webkit-scrollbar { width: 4px; }
+    #chatHistoryList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 9999px; }
+  </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between overflow-x-hidden">
+  <canvas id="bg3d"></canvas>
+  <div id="reactionStage" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+  <!-- Dynamic Island Toast Notification -->
+  <div id="toastBanner" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-4 transition-all duration-300">
+    <div class="ios-glass-dark px-4 py-2 rounded-full flex items-center gap-2.5 text-xs sm:text-sm font-semibold shadow-2xl border border-pink-400/40">
+      <span id="toastIcon" class="text-base">🎲</span>
+      <span id="toastText" class="text-white tracking-wide">Ready to roll!</span>
+    </div>
+  </div>
+
+  <!-- TOP BAR: iOS 18 Dynamic Island Header -->
+  <header class="relative z-20 w-full max-w-6xl mx-auto px-3 pt-2.5 pb-1 flex items-center justify-between gap-2 flex-wrap">
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="btnOpenConnectModal" type="button" class="ios-glass px-3 py-1.5 rounded-2xl flex items-center gap-2 hover:bg-white/20 transition">
+        <span id="connDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24]"></span>
+        <div class="text-left">
+          <div class="text-[10px] uppercase tracking-wider text-pink-200 font-bold leading-none">Couple Room</div>
+          <div id="roomCodeBadge" class="text-xs sm:text-sm font-extrabold text-white tracking-wider">TAP TO CONNECT</div>
+        </div>
+      </button>
+
+      <div class="ios-glass p-1 rounded-2xl flex items-center gap-1" role="group" aria-label="Ludo Mode">
+        <button id="btnModeClassic" type="button" data-tokens="4" class="mode-btn px-2.5 py-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition bg-gradient-to-r from-pink-500 to-amber-400 text-white shadow">
+          Classic (4 Tokens)
+        </button>
+        <button id="btnModeQuick" type="button" data-tokens="2" class="mode-btn px-2.5 py-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition text-pink-100/80 hover:text-white">
+          Quick (2 Tokens)
+        </button>
+      </div>
+
+      <button id="btnEasyStartToggle" type="button" class="ios-pill-btn px-2.5 py-1.5 rounded-2xl text-[11px] font-bold text-amber-200">
+        <span id="easyStartLabel">⚡ Unlock on: 6 Only</span>
+      </button>
+    </div>
+
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <button id="btnThemeCycle" type="button" class="ios-pill-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-pink-100 flex items-center gap-1">
+        <span>🌅</span>
+        <span id="themeNameLabel" class="hidden sm:inline">Sunset Paris</span>
+      </button>
+
+      <button id="btnNewMatch" type="button" class="ios-pill-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-200 flex items-center gap-1">
+        <span>🔄</span>
+        <span class="hidden sm:inline">New Match</span>
+      </button>
+
+      <button id="btnSoundToggle" type="button" class="ios-pill-btn w-9 h-9 rounded-xl flex items-center justify-center text-sm">
+        <span id="soundIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="relative z-10 flex-1 w-full max-w-6xl mx-auto px-3 py-1.5 flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-3">
+    <!-- LEFT / CENTER: 3D Tactile 15x15 Classic Ludo Board -->
+    <div class="w-full lg:w-7/12 flex flex-col items-center justify-center">
+      <div class="w-full max-w-[470px] ios-glass rounded-3xl p-2.5 sm:p-3.5 flex flex-col items-center shadow-2xl">
+        <div class="w-full flex items-center justify-between gap-2 mb-2 px-1">
+          <div id="p0Card" class="flex-1 rounded-2xl px-3 py-1.5 bg-rose-500/25 border border-rose-400/60 flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-rose-500 border border-white shadow"></span>
+              <div>
+                <div class="text-xs font-extrabold text-white leading-tight">You (Rose ❤️)</div>
+                <div id="p0SubStatus" class="text-[10px] text-rose-200 font-semibold">Your Turn!</div>
+              </div>
+            </div>
+            <span id="p0HomeBadge" class="text-xs font-extrabold bg-black/40 px-2 py-0.5 rounded-full text-rose-200">🏠 0/4</span>
+          </div>
+
+          <span class="text-xs font-extrabold text-white/50">VS</span>
+
+          <div id="p1Card" class="flex-1 rounded-2xl px-3 py-1.5 bg-amber-500/15 border border-amber-300/30 flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-amber-400 border border-white shadow"></span>
+              <div>
+                <div class="text-xs font-extrabold text-white leading-tight">Partner (Gold 💛)</div>
+                <div id="p1SubStatus" class="text-[10px] text-amber-200 font-semibold">Waiting...</div>
+              </div>
+            </div>
+            <span id="p1HomeBadge" class="text-xs font-extrabold bg-black/40 px-2 py-0.5 rounded-full text-amber-200">🏠 0/4</span>
+          </div>
+        </div>
+
+        <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow-inner border-2 border-white/40 bg-slate-950/40">
+          <canvas id="ludoCanvas" width="600" height="600" class="w-full h-full block cursor-pointer touch-manipulation"></canvas>
+        </div>
+
+        <div class="w-full flex items-center justify-between text-[11px] text-pink-100/80 mt-2 px-1">
+          <span>⭐ Star squares are safe zones</span>
+          <span id="moveInstructionText" class="font-bold text-amber-200">Tap the 3D Dice to roll!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Live Camera Dock + 3D Dice Roller + Couple Texting -->
+    <div class="w-full lg:w-5/12 flex flex-col justify-between gap-2.5 max-w-[470px] lg:max-w-none">
+      <!-- 1. LIVE COUPLE CAMERA DOCK -->
+      <div class="w-full ios-glass rounded-3xl p-2.5 flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="relative flex-1 h-24 sm:h-28 rounded-2xl overflow-hidden bg-slate-900/90 border border-pink-400/50 shadow-lg">
+            <video id="remoteVideo" autoplay playsinline class="w-full h-full hidden"></video>
+            <div id="remoteFallback" class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-900/80 via-purple-900/80 to-indigo-950 relative">
+              <div class="text-3xl mb-1">👩‍❤️‍👨</div>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent flex flex-col justify-end p-2">
+                <span id="partnerVideoBadge" class="text-[11px] font-bold text-pink-200 leading-tight truncate">Partner • Ready</span>
+              </div>
+            </div>
+            <div id="videoChatOverlay" class="hidden absolute top-1.5 left-1.5 right-1.5 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-xl border border-pink-400/50 text-[11px] text-white font-semibold truncate">
+              💬 Partner: Ready!
+            </div>
+          </div>
+
+          <div class="relative w-28 sm:w-32 h-24 sm:h-28 rounded-2xl overflow-hidden bg-slate-900/90 border border-amber-300/50 shadow-lg flex-shrink-0">
+            <video id="localVideo" autoplay muted playsinline class="w-full h-full mirror-video hidden"></video>
+            <div id="localFallback" class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-rose-950 to-indigo-950 p-2 text-center">
+              <span class="text-xl">📷</span>
+              <span id="localCamStatusText" class="text-[10px] text-amber-200 font-semibold mt-0.5">Cam Off</span>
+            </div>
+            <div class="absolute bottom-1.5 left-2 flex items-center gap-1 pointer-events-none">
+              <span class="text-[9px] font-bold bg-black/60 px-1.5 py-0.5 rounded text-amber-200">You</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-1.5 flex-wrap">
+          <div class="flex items-center gap-1.5">
+            <button id="btnToggleCam" type="button" class="ios-pill-btn px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 text-white">
+              <span>📹</span>
+              <span id="camBtnLabel">Start Cam</span>
+            </button>
+            <button id="btnToggleMic" type="button" class="ios-pill-btn px-2.5 py-1 rounded-xl text-[11px] font-bold text-white">
+              <span id="micBtnIcon">🎙️</span>
+            </button>
+            <button id="btnMirrorCam" type="button" class="ios-pill-btn px-2 py-1 rounded-xl text-[11px] font-bold text-white">
+              <span>🪞</span>
+            </button>
+          </div>
+
+          <button id="btnAiPartnerToggle" type="button" class="ios-pill-btn px-2.5 py-1 rounded-xl text-[11px] font-bold text-pink-200">
+            <span id="aiPartnerLabel">🤖 AI Partner: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 3D INTERACTIVE DICE TRAY -->
+      <div class="w-full ios-glass rounded-3xl p-3 flex items-center justify-between gap-3">
+        <div class="flex-1">
+          <div id="turnBadgePill" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/30 border border-rose-300/50 text-[10px] font-extrabold uppercase tracking-wider text-rose-200 mb-1">
+            <span>🎲</span>
+            <span id="turnOwnerLabel">YOUR TURN (ROSE)</span>
+          </div>
+          <div id="diceStatusTitle" class="text-sm sm:text-base font-extrabold text-white">
+            Tap Dice to Roll!
+          </div>
+          <div id="diceSubHint" class="text-[11px] text-pink-200/80">
+            Roll a 6 to bring a token onto the track.
+          </div>
+        </div>
+
+        <button id="btnRollDice" type="button" class="dice-3d-btn flex items-center justify-center flex-shrink-0">
+          <svg id="diceSvg" viewBox="0 0 60 60" class="w-12 h-12"></svg>
+        </button>
+      </div>
+
+      <!-- 3. iMESSAGE-STYLE COUPLE TEXTING & EMOJI BOX -->
+      <div class="w-full ios-glass rounded-3xl p-3 flex flex-col gap-2 flex-1 min-h-[195px]">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs">💬</span>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-pink-200">Couple Live Texting</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" data-reaction="❤️" class="reaction-btn ios-pill-btn w-6 h-6 rounded-full flex items-center justify-center text-xs">❤️</button>
+            <button type="button" data-reaction="😘" class="reaction-btn ios-pill-btn w-6 h-6 rounded-full flex items-center justify-center text-xs">😘</button>
+            <button type="button" data-reaction="😂" class="reaction-btn ios-pill-btn w-6 h-6 rounded-full flex items-center justify-center text-xs">😂</button>
+            <button type="button" data-reaction="🥺" class="reaction-btn ios-pill-btn w-6 h-6 rounded-full flex items-center justify-center text-xs">🥺</button>
+            <button type="button" data-reaction="🔥" class="reaction-btn ios-pill-btn w-6 h-6 rounded-full flex items-center justify-center text-xs">🔥</button>
+          </div>
+        </div>
+
+        <div id="chatHistoryList" class="flex-1 bg-slate-950/55 rounded-2xl p-2.5 border border-white/10 overflow-y-auto max-h-28 sm:max-h-32 space-y-1.5 text-xs select-text">
+          <div class="text-[11px] text-center text-pink-200/60 italic">
+            Send a text or tap a quick message while playing Ludo together! 💞
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1 overflow-x-auto pb-0.5">
+          <button type="button" data-quick="Please don't cut my token! 🥺" class="quick-chat-chip ios-pill-btn px-2 py-0.5 rounded-full text-[10px] font-semibold text-pink-100 whitespace-nowrap">Don't cut me! 🥺</button>
+          <button type="button" data-quick="Need a 6 right now! 🎲✨" class="quick-chat-chip ios-pill-btn px-2 py-0.5 rounded-full text-[10px] font-semibold text-amber-100 whitespace-nowrap">Need a 6! 🎲</button>
+          <button type="button" data-quick="Haha caught you! 😂❤️" class="quick-chat-chip ios-pill-btn px-2 py-0.5 rounded-full text-[10px] font-semibold text-pink-100 whitespace-nowrap">Caught you! 😂</button>
+          <button type="button" data-quick="Love playing with you 💞" class="quick-chat-chip ios-pill-btn px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-100 whitespace-nowrap">Love you 💞</button>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <input id="chatInput" type="text" maxlength="100" placeholder="Type a message to your partner..." class="flex-1 bg-white/10 text-white placeholder-pink-200/60 text-xs px-3 py-2 rounded-xl border border-white/20 focus:outline-none focus:border-pink-400 select-text" />
+          <button id="btnSendChat" type="button" class="ios-primary-btn px-3.5 py-2 rounded-xl text-xs font-extrabold text-white">
+            Send 💌
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- CONNECT MODAL -->
+  <div id="connectModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="ios-glass-dark w-full max-w-md rounded-3xl p-5 sm:p-6 border border-white/25 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500 to-amber-400 flex items-center justify-center text-xl shadow-lg border border-white/40">🎲</div>
+          <div>
+            <h2 class="font-display text-lg font-extrabold text-white">Couple Ludo 3D Connect</h2>
+            <p class="text-xs text-pink-200/80">Secret Code Sync + Live Camera &amp; Texting</p>
+          </div>
+        </div>
+        <button id="btnCloseConnectModal" type="button" class="ios-pill-btn w-8 h-8 rounded-full flex items-center justify-center text-xs">✕</button>
+      </div>
+
+      <div class="bg-white/10 rounded-2xl p-3.5 border border-white/15 mb-3">
+        <label for="secretCodeInput" class="block text-[11px] uppercase tracking-wider text-amber-200 font-bold mb-1.5">
+          Enter Couple Secret Code
+        </label>
+        <div class="flex items-center gap-2">
+          <input id="secretCodeInput" type="text" maxlength="12" value="LUDO99" class="flex-1 bg-slate-950/70 text-center font-display text-lg font-extrabold tracking-[0.25em] uppercase text-white py-2 px-3 rounded-xl border border-pink-400/50 focus:outline-none select-text" />
+          <button id="btnRandomCode" type="button" class="ios-pill-btn px-3 py-2.5 rounded-xl text-xs font-bold">🎲 New</button>
+          <button id="btnCopyCode" type="button" class="ios-pill-btn px-3 py-2.5 rounded-xl text-xs font-bold text-amber-200">📋 Copy</button>
+        </div>
+        <p class="text-[11px] text-pink-100/75 mt-2 leading-relaxed">
+          Open on both phones and enter the same <strong>Secret Code</strong>: Partner 1 taps <strong>Host Room (Rose ❤️)</strong> and Partner 2 taps <strong>Join Room (Gold 💛)</strong>.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 mb-3">
+        <button id="btnHostRoom" type="button" class="ios-primary-btn py-3 px-3 rounded-2xl font-bold text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5">
+          <span>👑 Host Room (Rose ❤️)</span>
+          <span class="text-[10px] font-normal text-white/90">Partner 1 • Wait for Join</span>
+        </button>
+        <button id="btnJoinRoom" type="button" class="ios-pill-btn py-3 px-3 rounded-2xl font-bold text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 bg-amber-500/25 border-amber-300/50">
+          <span>💞 Join Room (Gold 💛)</span>
+          <span class="text-[10px] font-normal text-amber-200">Partner 2 • Connect Now</span>
+        </button>
+      </div>
+
+      <div id="modalConnStatus" class="bg-slate-900/70 rounded-xl p-2.5 text-xs text-center text-amber-200 border border-white/10 mb-3">
+        Ready! Connect two phones via Secret Code or play right now with AI Partner.
+      </div>
+
+      <button id="btnStartSoloOrDemo" type="button" class="w-full ios-pill-btn py-2.5 rounded-2xl text-xs font-bold text-pink-200 hover:text-white">
+        ✨ Play Immediately (With Smart AI Partner &amp; Chat)
+      </button>
+    </div>
+  </div>
+
+  <!-- VICTORY MODAL -->
+  <div id="winModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="ios-glass-dark w-full max-w-sm rounded-3xl p-6 border border-amber-300/40 shadow-2xl text-center">
+      <div class="text-4xl mb-2">👑🎲💞</div>
+      <h2 id="winModalTitle" class="font-display text-xl font-extrabold text-white mb-1">Ludo Champion!</h2>
+      <p id="winModalSubtitle" class="text-xs text-pink-200 italic mb-4">All tokens reached the center home heart!</p>
+      <button id="btnPlayAgainWin" type="button" class="w-full ios-primary-btn py-3 rounded-2xl font-extrabold text-sm text-white">
+        Play Another Match 🔄
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const SoundFX = {
+      ctx: null,
+      muted: false,
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      tone(freq, duration = 0.12, type = 'sine', vol = 0.12, delay = 0) {
+        if (this.muted) return;
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime + delay;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.exponentialRampToValueAtTime(vol, now + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.02);
+        } catch (e) {}
+      },
+      playDiceRoll() { [280, 340, 420, 390, 510].forEach((f, i) => this.tone(f, 0.07, 'triangle', 0.11, i * 0.055)); },
+      playHop(stepIdx = 0) {
+        const freqs = [440, 493.88, 523.25, 587.33, 659.25, 783.99];
+        this.tone(freqs[stepIdx % freqs.length], 0.09, 'sine', 0.13);
+      },
+      playCapture() { [659.25, 523.25, 392.0, 261.63].forEach((f, i) => this.tone(f, 0.14, 'sawtooth', 0.11, i * 0.055)); },
+      playHomeGoal() { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone(f, 0.24, 'triangle', 0.15, i * 0.06)); },
+      playChatPop() { this.tone(587.33, 0.09, 'sine', 0.1, 0); this.tone(880, 0.14, 'sine', 0.11, 0.05); },
+      playWin() { [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => this.tone(f, 0.34, 'triangle', 0.16, i * 0.08)); }
+    };
+
+    const Scene3D = {
+      scene: null, camera: null, renderer: null, hearts: [], particles: null, themeIndex: 0,
+      themes: [
+        { name: 'Sunset Paris',  bg: 0x1e0b28, fog: 0x3b123c, l1: 0xff5e8e, l2: 0xfbbf24 },
+        { name: 'Sakura Garden', bg: 0x230d26, fog: 0x43163b, l1: 0xff85b3, l2: 0xfbcfe8 },
+        { name: 'Starlight Sky', bg: 0x090b24, fog: 0x161a42, l1: 0x818cf8, l2: 0xf472b6 },
+        { name: 'Aurora Lagoon', bg: 0x061c24, fog: 0x0c343d, l1: 0x34d399, l2: 0x60a5fa }
+      ],
+      pl1: null, pl2: null,
+      init() {
+        const canvas = document.getElementById('bg3d');
+        if (!canvas || typeof THREE === 'undefined') return;
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x3b123c, 0.032);
+        this.camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+        this.camera.position.set(0, 1.0, 11);
+        this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        this.renderer.setClearColor(0x1e0b28, 1);
+        this.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+        this.pl1 = new THREE.PointLight(0xff5e8e, 2.2, 30); this.pl1.position.set(6, 6, 6); this.scene.add(this.pl1);
+        this.pl2 = new THREE.PointLight(0xfbbf24, 1.8, 30); this.pl2.position.set(-6, -3, 5); this.scene.add(this.pl2);
+
+        const heartShape = new THREE.Shape();
+        heartShape.moveTo(0.25, 0.25);
+        heartShape.bezierCurveTo(0.25, 0.25, 0.2, 0, 0, 0);
+        heartShape.bezierCurveTo(-0.3, 0, -0.3, 0.35, -0.3, 0.35);
+        heartShape.bezierCurveTo(-0.3, 0.55, -0.1, 0.77, 0.25, 0.95);
+        heartShape.bezierCurveTo(0.6, 0.77, 0.8, 0.55, 0.8, 0.35);
+        heartShape.bezierCurveTo(0.8, 0.35, 0.8, 0, 0.5, 0);
+        heartShape.bezierCurveTo(0.35, 0, 0.25, 0.25, 0.25, 0.25);
+        const heartGeo = new THREE.ExtrudeGeometry(heartShape, { depth: 0.2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.07, bevelThickness: 0.07 });
+        heartGeo.center();
+
+        for (let i = 0; i < 12; i++) {
+          const mat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xff4d8d : 0xfbbf24, roughness: 0.25, metalness: 0.35 });
+          const m = new THREE.Mesh(heartGeo, mat);
+          m.rotation.z = Math.PI;
+          const angle = (i / 12) * Math.PI * 2;
+          m.position.set(Math.cos(angle) * 5.2, (Math.random() - 0.4) * 5.5, -3 - Math.random() * 4);
+          const s = 0.42 + (i % 3) * 0.15;
+          m.scale.set(s, s, s);
+          m.userData = { baseY: m.position.y, speed: 0.8 + Math.random() * 0.7, phase: i };
+          this.hearts.push(m);
+          this.scene.add(m);
+        }
+        window.addEventListener('resize', () => {
+          if (!this.camera || !this.renderer) return;
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        this.animate();
+      },
+      cycleTheme() {
+        this.themeIndex = (this.themeIndex + 1) % this.themes.length;
+        const th = this.themes[this.themeIndex];
+        if (this.renderer) this.renderer.setClearColor(th.bg, 1);
+        if (this.scene && this.scene.fog) this.scene.fog.color.setHex(th.fog);
+        if (this.pl1) this.pl1.color.setHex(th.l1);
+        if (this.pl2) this.pl2.color.setHex(th.l2);
+        return th.name;
+      },
+      animate() {
+        requestAnimationFrame(() => this.animate());
+        const t = performance.now() * 0.001;
+        this.hearts.forEach((h) => {
+          h.position.y = h.userData.baseY + Math.sin(t * h.userData.speed + h.userData.phase) * 0.4;
+          h.rotation.y += 0.01;
+        });
+        if (this.renderer && this.scene && this.camera) this.renderer.render(this.scene, this.camera);
+      }
+    };
+
+    const MAIN_TRACK = [
+      [6,1],[6,2],[6,3],[6,4],[6,5],
+      [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
+      [0,7],
+      [0,8],[1,8],[2,8],[3,8],[4,8],[5,8],
+      [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
+      [7,14],
+      [8,14],[8,13],[8,12],[8,11],[8,10],[8,9],
+      [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
+      [14,7],
+      [14,6],[13,6],[12,6],[11,6],[10,6],[9,6],
+      [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
+      [7,0],[6,0]
+    ];
+    const SAFE_TRACK_INDICES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+    const HOME_PATHS = {
+      0: [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6.25]],
+      1: [[7,13],[7,12],[7,11],[7,10],[7,9],[7,7.75]]
+    };
+    const YARD_SPOTS = {
+      0: [[1.8, 1.8], [1.8, 3.8], [3.8, 1.8], [3.8, 3.8]],
+      1: [[10.8, 10.8], [10.8, 12.8], [12.8, 10.8], [12.8, 12.8]]
+    };
+    const START_OFFSET = { 0: 0, 1: 26 };
+
+    function getTokenBoardCoords(playerIdx, tokenIdx, stepVal) {
+      if (stepVal === -1) return YARD_SPOTS[playerIdx][tokenIdx];
+      if (stepVal >= 0 && stepVal <= 50) return MAIN_TRACK[(START_OFFSET[playerIdx] + stepVal) % 52];
+      if (stepVal >= 51 && stepVal <= 55) return HOME_PATHS[playerIdx][stepVal - 51];
+      const base = HOME_PATHS[playerIdx][5];
+      const offsets = [[-0.22, -0.15], [0.22, -0.15], [-0.22, 0.15], [0.22, 0.15]];
+      const off = offsets[tokenIdx % 4];
+      return [base[0] + off[0], base[1] + off[1]];
+    }
+
+    function getGlobalTrackIndex(playerIdx, stepVal) {
+      if (stepVal < 0 || stepVal > 50) return -1;
+      return (START_OFFSET[playerIdx] + stepVal) % 52;
+    }
+
+    const State = {
+      tokensPerPlayer: 4,
+      unlockOnOneOrSix: false,
+      myPlayerIdx: 0,
+      turn: 0,
+      diceValue: 6,
+      phase: 'ROLL',
+      tokens: { 0: [-1, -1, -1, -1], 1: [-1, -1, -1, -1] },
+      aiPartnerActive: true,
+      aiTimer: null,
+      pulsePhase: 0,
+      roomCode: 'LUDO99',
+      role: 'host',
+      peer: null,
+      conn: null,
+      mediaCall: null,
+      localStream: null,
+      micEnabled: true,
+      isMirrored: true,
+      bc: null
+    };
+
+    function showToast(icon, text) {
+      const banner = document.getElementById('toastBanner');
+      if (!banner) return;
+      document.getElementById('toastIcon').textContent = icon;
+      document.getElementById('toastText').textContent = text;
+      banner.classList.remove('opacity-0', '-translate-y-4');
+      banner.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(banner._t);
+      banner._t = setTimeout(() => {
+        banner.classList.add('opacity-0', '-translate-y-4');
+        banner.classList.remove('opacity-100', 'translate-y-0');
+      }, 2700);
+    }
+
+    function spawnFloatingReaction(emoji, text = '') {
+      const stage = document.getElementById('reactionStage');
+      if (!stage) return;
+      const el = document.createElement('div');
+      el.className = 'reaction-float absolute flex flex-col items-center pointer-events-none';
+      el.style.left = (22 + Math.random() * 56) + '%';
+      el.style.bottom = '18%';
+      el.innerHTML = `<span class="text-3xl sm:text-4xl drop-shadow-lg">${emoji}</span>` +
+        (text ? `<span class="mt-1 px-3 py-0.5 rounded-full bg-pink-600/90 text-white text-xs font-bold shadow-lg">${text}</span>` : '');
+      stage.appendChild(el);
+      SoundFX.playChatPop();
+      setTimeout(() => el.remove(), 2200);
+    }
+
+    function canTokenMove(playerIdx, tokenIdx, diceVal) {
+      if (tokenIdx >= State.tokensPerPlayer) return false;
+      const pos = State.tokens[playerIdx][tokenIdx];
+      if (pos === 56) return false;
+      if (pos === -1) return diceVal === 6 || (State.unlockOnOneOrSix && diceVal === 1);
+      return pos + diceVal <= 56;
+    }
+
+    function getMovableTokenIndices(playerIdx, diceVal) {
+      const list = [];
+      for (let i = 0; i < State.tokensPerPlayer; i++) {
+        if (canTokenMove(playerIdx, i, diceVal)) list.push(i);
+      }
+      return list;
+    }
+
+    function resetMatch(tokensCount = State.tokensPerPlayer, broadcast = true) {
+      State.tokensPerPlayer = tokensCount;
+      State.turn = 0;
+      State.diceValue = 6;
+      State.phase = 'ROLL';
+      State.tokens = { 0: [-1, -1, -1, -1], 1: [-1, -1, -1, -1] };
+      document.getElementById('winModal').classList.add('hidden');
+      renderDiceSVG(State.diceValue);
+      updateTurnAndScoreUI();
+      drawLudoBoard();
+      if (broadcast) {
+        sendSyncMessage({ type: 'RESET_MATCH', tokensPerPlayer: State.tokensPerPlayer, unlockOnOneOrSix: State.unlockOnOneOrSix });
+      }
+    }
+
+    function updateTurnAndScoreUI() {
+      const p0Home = State.tokens[0].slice(0, State.tokensPerPlayer).filter((s) => s === 56).length;
+      const p1Home = State.tokens[1].slice(0, State.tokensPerPlayer).filter((s) => s === 56).length;
+      document.getElementById('p0HomeBadge').textContent = `🏠 ${p0Home}/${State.tokensPerPlayer}`;
+      document.getElementById('p1HomeBadge').textContent = `🏠 ${p1Home}/${State.tokensPerPlayer}`;
+
+      const isP0Turn = State.turn === 0;
+      document.getElementById('p0SubStatus').textContent = isP0Turn
+        ? (State.phase === 'MOVE' ? `Rolled ${State.diceValue} • Pick Token` : 'Ready to Roll 🎲')
+        : 'Waiting...';
+      document.getElementById('p1SubStatus').textContent = !isP0Turn
+        ? (State.phase === 'MOVE' ? `Rolled ${State.diceValue} • Moving` : 'Rolling Dice 🎲')
+        : 'Waiting...';
+
+      document.getElementById('turnOwnerLabel').textContent = isP0Turn ? 'ROSE TURN (PARTNER 1)' : 'GOLD TURN (PARTNER 2)';
+      document.getElementById('diceStatusTitle').textContent = State.phase === 'ROLL'
+        ? (isP0Turn ? 'Tap 3D Dice to Roll!' : 'Partner Turn to Roll!')
+        : `Rolled a ${State.diceValue}!`;
+
+      document.querySelectorAll('.mode-btn').forEach((btn) => {
+        const active = Number(btn.dataset.tokens) === State.tokensPerPlayer;
+        btn.className = active
+          ? 'mode-btn px-2.5 py-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition bg-gradient-to-r from-pink-500 to-amber-400 text-white shadow'
+          : 'mode-btn px-2.5 py-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition text-pink-100/80 hover:text-white';
+      });
+    }
+
+    function renderDiceSVG(val) {
+      const svg = document.getElementById('diceSvg');
+      if (!svg) return;
+      const pipCoords = {
+        1: [[30, 30]],
+        2: [[18, 18], [42, 42]],
+        3: [[16, 16], [30, 30], [44, 44]],
+        4: [[18, 18], [42, 18], [18, 42], [42, 42]],
+        5: [[17, 17], [43, 17], [30, 30], [17, 43], [43, 43]],
+        6: [[18, 15], [42, 15], [18, 30], [42, 30], [18, 45], [42, 45]]
+      };
+      const pts = pipCoords[val] || pipCoords[6];
+      const color = val === 6 ? '#e11d48' : '#1e1b4b';
+      svg.innerHTML = pts.map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="${val === 1 ? 7 : 5.2}" fill="${color}" />`).join('');
+    }
+
+    function triggerDiceRoll(forcedValue = null, isRemote = false) {
+      if (State.phase !== 'ROLL') return;
+      if (!isRemote && State.conn && State.conn.open && State.turn !== State.myPlayerIdx) {
+        showToast('⏳', "Wait for your partner's roll!");
+        return;
+      }
+      State.phase = 'ANIMATING';
+      const btn = document.getElementById('btnRollDice');
+      btn.classList.remove('dice-rolling');
+      void btn.offsetWidth;
+      btn.classList.add('dice-rolling');
+      SoundFX.playDiceRoll();
+
+      let finalVal = forcedValue;
+      if (!finalVal) {
+        const allLocked = State.tokens[State.turn].slice(0, State.tokensPerPlayer).every((p) => p === -1);
+        finalVal = (allLocked && Math.random() < 0.38) ? 6 : Math.floor(1 + Math.random() * 6);
+      }
+      if (!isRemote) sendSyncMessage({ type: 'DICE_ROLL', value: finalVal, turn: State.turn });
+
+      setTimeout(() => {
+        State.diceValue = finalVal;
+        renderDiceSVG(finalVal);
+        const movable = getMovableTokenIndices(State.turn, finalVal);
+        if (movable.length === 0) {
+          showToast('🎲', `Rolled ${finalVal} — no valid moves!`);
+          setTimeout(() => {
+            State.turn = 1 - State.turn;
+            State.phase = 'ROLL';
+            updateTurnAndScoreUI();
+            checkAiPartnerTurn();
+          }, 650);
+        } else if (movable.length === 1) {
+          State.phase = 'MOVE';
+          updateTurnAndScoreUI();
+          setTimeout(() => { if (State.phase === 'MOVE') executeTokenMove(State.turn, movable[0], false); }, 380);
+        } else {
+          State.phase = 'MOVE';
+          updateTurnAndScoreUI();
+          checkAiPartnerTurn();
+        }
+      }, 460);
+    }
+
+    function executeTokenMove(playerIdx, tokenIdx, isRemote = false) {
+      if (State.phase !== 'MOVE' || playerIdx !== State.turn) return;
+      if (!canTokenMove(playerIdx, tokenIdx, State.diceValue)) return;
+      State.phase = 'ANIMATING';
+      if (!isRemote) sendSyncMessage({ type: 'TOKEN_MOVE', playerIdx, tokenIdx, diceValue: State.diceValue });
+
+      const startPos = State.tokens[playerIdx][tokenIdx];
+      const targetPos = startPos === -1 ? 0 : startPos + State.diceValue;
+      const stepsToAnimate = startPos === -1 ? [0] : [];
+      if (startPos >= 0) {
+        for (let s = startPos + 1; s <= targetPos; s++) stepsToAnimate.push(s);
+      }
+      let i = 0;
+      function stepNext() {
+        if (i < stepsToAnimate.length) {
+          State.tokens[playerIdx][tokenIdx] = stepsToAnimate[i];
+          SoundFX.playHop(i);
+          drawLudoBoard();
+          i++;
+          setTimeout(stepNext, 115);
+        } else {
+          finalizeMoveAfterAnimation(playerIdx, tokenIdx, targetPos);
+        }
+      }
+      stepNext();
+    }
+
+    function finalizeMoveAfterAnimation(playerIdx, tokenIdx, landedPos) {
+      let extraTurn = (State.diceValue === 6);
+      if (landedPos === 56) {
+        extraTurn = true;
+        SoundFX.playHomeGoal();
+        spawnFloatingReaction('🏠', 'Token Home! +Bonus Roll');
+      }
+      if (landedPos >= 0 && landedPos <= 50) {
+        const myGlobal = getGlobalTrackIndex(playerIdx, landedPos);
+        if (!SAFE_TRACK_INDICES.has(myGlobal)) {
+          const oppIdx = 1 - playerIdx;
+          const oppOnSquare = [];
+          for (let t = 0; t < State.tokensPerPlayer; t++) {
+            const oppStep = State.tokens[oppIdx][t];
+            if (oppStep >= 0 && oppStep <= 50 && getGlobalTrackIndex(oppIdx, oppStep) === myGlobal) oppOnSquare.push(t);
+          }
+          if (oppOnSquare.length === 1) {
+            State.tokens[oppIdx][oppOnSquare[0]] = -1;
+            extraTurn = true;
+            SoundFX.playCapture();
+            spawnFloatingReaction('⚔️', 'Token Captured! Bonus Roll 🎲');
+            showToast('💥', `${playerIdx === 0 ? 'Rose' : 'Gold'} captured a token!`);
+          }
+        }
+      }
+      drawLudoBoard();
+      const homeCount = State.tokens[playerIdx].slice(0, State.tokensPerPlayer).filter((p) => p === 56).length;
+      if (homeCount === State.tokensPerPlayer) {
+        State.phase = 'GAMEOVER';
+        SoundFX.playWin();
+        updateTurnAndScoreUI();
+        document.getElementById('winModalTitle').textContent = playerIdx === 0 ? 'Rose ❤️ Wins the Match!' : 'Gold 💛 Wins the Match!';
+        document.getElementById('winModal').classList.remove('hidden');
+        return;
+      }
+      if (!extraTurn) State.turn = 1 - State.turn;
+      State.phase = 'ROLL';
+      updateTurnAndScoreUI();
+      checkAiPartnerTurn();
+    }
+
+    function checkAiPartnerTurn() {
+      clearTimeout(State.aiTimer);
+      if (!State.aiPartnerActive || (State.conn && State.conn.open) || State.turn !== 1) return;
+      if (State.phase === 'ROLL') {
+        State.aiTimer = setTimeout(() => { if (State.turn === 1 && State.phase === 'ROLL') triggerDiceRoll(null, true); }, 850);
+      } else if (State.phase === 'MOVE') {
+        State.aiTimer = setTimeout(() => {
+          if (State.turn !== 1 || State.phase !== 'MOVE') return;
+          const movable = getMovableTokenIndices(1, State.diceValue);
+          if (movable.length > 0) executeTokenMove(1, movable[0], true);
+        }, 720);
+      }
+    }
+
+    function drawStarShape(ctx, cx, cy, spikes, outerR, innerR, fillStyle, strokeStyle) {
+      let rot = (Math.PI / 2) * 3;
+      const step = Math.PI / spikes;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerR);
+      for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+      }
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+      if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = 1.2; ctx.stroke(); }
+    }
+
+    function drawLudoBoard() {
+      const canvas = document.getElementById('ludoCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, S = W / 15;
+      ctx.clearRect(0, 0, W, W);
+
+      const COLORS = {
+        rose:  { main: '#f43f5e', light: '#ffe4e6', dark: '#9f1239' },
+        green: { main: '#10b981', light: '#d1fae5', dark: '#065f46' },
+        gold:  { main: '#f59e0b', light: '#fef3c7', dark: '#92400e' },
+        sky:   { main: '#3b82f6', light: '#dbeafe', dark: '#1e40af' }
+      };
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, W, W);
+
+      for (let c = 1; c <= 5; c++) { ctx.fillStyle = COLORS.rose.main; ctx.fillRect(c * S, 7 * S, S, S); }
+      ctx.fillRect(1 * S, 6 * S, S, S);
+      for (let r = 1; r <= 5; r++) { ctx.fillStyle = COLORS.green.main; ctx.fillRect(7 * S, r * S, S, S); }
+      ctx.fillRect(8 * S, 1 * S, S, S);
+      for (let c = 9; c <= 13; c++) { ctx.fillStyle = COLORS.gold.main; ctx.fillRect(c * S, 7 * S, S, S); }
+      ctx.fillRect(13 * S, 8 * S, S, S);
+      for (let r = 9; r <= 13; r++) { ctx.fillStyle = COLORS.sky.main; ctx.fillRect(7 * S, r * S, S, S); }
+      ctx.fillRect(6 * S, 13 * S, S, S);
+
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.25;
+      for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+          const inYard = (r < 6 && c < 6) || (r < 6 && c > 8) || (r > 8 && c < 6) || (r > 8 && c > 8);
+          const inCenter = (r >= 6 && r <= 8 && c >= 6 && c <= 8);
+          if (!inYard && !inCenter) ctx.strokeRect(c * S, r * S, S, S);
+        }
+      }
+
+      SAFE_TRACK_INDICES.forEach((idx) => {
+        const [r, c] = MAIN_TRACK[idx];
+        const isStart = (idx === 0 || idx === 13 || idx === 26 || idx === 39);
+        drawStarShape(ctx, (c + 0.5) * S, (r + 0.5) * S, 5, S * 0.34, S * 0.15, isStart ? '#ffffff' : '#fbbf24', '#d97706');
+      });
+
+      function drawHomeYard(r0, c0, pal, activeSlots, label) {
+        ctx.fillStyle = pal.main;
+        ctx.fillRect(c0 * S, r0 * S, 6 * S, 6 * S);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect((c0 + 0.75) * S, (r0 + 0.75) * S, 4.5 * S, 4.5 * S, 18);
+        ctx.fill();
+        ctx.fillStyle = pal.dark;
+        ctx.font = '800 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, (c0 + 3) * S, (r0 + 0.52) * S);
+        [[1.8, 1.8], [1.8, 3.8], [3.8, 1.8], [3.8, 3.8]].forEach(([dr, dc], idx) => {
+          ctx.beginPath();
+          ctx.arc((c0 + dc) * S, (r0 + dr) * S, S * 0.54, 0, Math.PI * 2);
+          ctx.fillStyle = idx < activeSlots ? pal.light : '#f1f5f9';
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = idx < activeSlots ? pal.main : '#cbd5e1';
+          ctx.stroke();
+        });
+      }
+
+      drawHomeYard(0, 0, COLORS.rose, State.tokensPerPlayer, 'ROSE ❤️ YOU');
+      drawHomeYard(0, 9, COLORS.green, 0, 'SAFE CORNER');
+      drawHomeYard(9, 9, COLORS.gold, State.tokensPerPlayer, 'GOLD 💛 PARTNER');
+      drawHomeYard(9, 0, COLORS.sky, 0, 'SAFE CORNER');
+
+      const cx = 7.5 * S, cy = 7.5 * S, xL = 6 * S, xR = 9 * S, yT = 6 * S, yB = 9 * S;
+      [
+        { pts: [[xL, yT], [xL, yB], [cx, cy]], color: COLORS.rose.main },
+        { pts: [[xL, yT], [xR, yT], [cx, cy]], color: COLORS.green.main },
+        { pts: [[xR, yT], [xR, yB], [cx, cy]], color: COLORS.gold.main },
+        { pts: [[xL, yB], [xR, yB], [cx, cy]], color: COLORS.sky.main }
+      ].forEach((t) => {
+        ctx.beginPath();
+        ctx.moveTo(t.pts[0][0], t.pts[0][1]);
+        ctx.lineTo(t.pts[1][0], t.pts[1][1]);
+        ctx.lineTo(t.pts[2][0], t.pts[2][1]);
+        ctx.closePath();
+        ctx.fillStyle = t.color;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      const movableNow = State.phase === 'MOVE' ? new Set(getMovableTokenIndices(State.turn, State.diceValue)) : new Set();
+      [0, 1].forEach((pIdx) => {
+        for (let tIdx = 0; tIdx < State.tokensPerPlayer; tIdx++) {
+          const stepVal = State.tokens[pIdx][tIdx];
+          const [r, c] = getTokenBoardCoords(pIdx, tIdx, stepVal);
+          const isYard = stepVal === -1;
+          const drawX = isYard ? c * S : (c + 0.5) * S;
+          const drawY = isYard ? r * S : (r + 0.5) * S;
+          const pal = pIdx === 0 ? COLORS.rose : COLORS.gold;
+          if (pIdx === State.turn && movableNow.has(tIdx)) {
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, S * 0.5 + Math.sin(State.pulsePhase) * 3, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3.5;
+            ctx.stroke();
+          }
+          ctx.beginPath();
+          ctx.arc(drawX, drawY, S * 0.34, 0, Math.PI * 2);
+          ctx.fillStyle = pal.main;
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+        }
+      });
+    }
+
+    function setupBoardCanvasInteraction() {
+      const canvas = document.getElementById('ludoCanvas');
+      canvas.addEventListener('pointerdown', (e) => {
+        if (State.phase === 'ROLL') { triggerDiceRoll(null, false); return; }
+        if (State.phase !== 'MOVE') return;
+        const rect = canvas.getBoundingClientRect();
+        const clickX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+        const clickY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+        const S = canvas.width / 15;
+        const movable = getMovableTokenIndices(State.turn, State.diceValue);
+        let pickedToken = -1, minDist = 999;
+        movable.forEach((tIdx) => {
+          const stepVal = State.tokens[State.turn][tIdx];
+          const [r, c] = getTokenBoardCoords(State.turn, tIdx, stepVal);
+          const tx = stepVal === -1 ? c * S : (c + 0.5) * S;
+          const ty = stepVal === -1 ? r * S : (r + 0.5) * S;
+          const d = Math.hypot(clickX - tx, clickY - ty);
+          if (d < S * 0.85 && d < minDist) { minDist = d; pickedToken = tIdx; }
+        });
+        if (pickedToken !== -1) executeTokenMove(State.turn, pickedToken, false);
+      });
+      setInterval(() => { if (State.phase === 'MOVE') { State.pulsePhase += 0.35; drawLudoBoard(); } }, 60);
+    }
+
+    function appendChatMessage(senderLabel, text, isSelf = true) {
+      const list = document.getElementById('chatHistoryList');
+      const row = document.createElement('div');
+      row.className = `flex flex-col ${isSelf ? 'items-end' : 'items-start'}`;
+      const bubble = document.createElement('div');
+      bubble.className = isSelf
+        ? 'max-w-[85%] px-3 py-1.5 rounded-2xl rounded-br-sm bg-gradient-to-r from-pink-500 to-rose-500 text-white font-medium shadow'
+        : 'max-w-[85%] px-3 py-1.5 rounded-2xl rounded-bl-sm bg-white/15 border border-white/20 text-amber-100 font-medium shadow';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+      list.appendChild(row);
+      list.scrollTop = list.scrollHeight;
+
+      const overlay = document.getElementById('videoChatOverlay');
+      if (overlay) {
+        overlay.textContent = `💬 ${senderLabel}: ${text}`;
+        overlay.classList.remove('hidden');
+        clearTimeout(overlay._t);
+        overlay._t = setTimeout(() => overlay.classList.add('hidden'), 4200);
+      }
+      SoundFX.playChatPop();
+    }
+
+    function sendCoupleTextMessage(rawText) {
+      const text = (rawText || '').trim();
+      if (!text) return;
+      appendChatMessage('You', text, true);
+      sendSyncMessage({ type: 'CHAT_TEXT', text });
+      if (State.aiPartnerActive && (!State.conn || !State.conn.open)) {
+        setTimeout(() => {
+          const replies = [
+            "Let's see who wins this round! 😘🎲",
+            "Please don't cut my token! 🥺❤️",
+            "Lucky roll! My turn now 🔥",
+            "Playing Ludo with you is the best feeling 💞"
+          ];
+          appendChatMessage('Partner', replies[Math.floor(Math.random() * replies.length)], false);
+        }, 1200);
+      }
+    }
+
+    async function toggleLocalCamera() {
+      const videoEl = document.getElementById('localVideo');
+      const fallbackEl = document.getElementById('localFallback');
+      const labelEl = document.getElementById('camBtnLabel');
+      if (State.localStream) {
+        State.localStream.getTracks().forEach((t) => t.stop());
+        State.localStream = null;
+        videoEl.classList.add('hidden');
+        fallbackEl.classList.remove('hidden');
+        labelEl.textContent = 'Start Cam';
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        State.localStream = stream;
+        videoEl.srcObject = stream;
+        videoEl.classList.remove('hidden');
+        fallbackEl.classList.add('hidden');
+        labelEl.textContent = 'Cam Live';
+        if (State.peer && State.conn && State.conn.open) {
+          const call = State.peer.call(State.conn.peer, State.localStream);
+          if (call) call.on('stream', (rs) => attachRemoteStream(rs));
+        }
+      } catch (err) {
+        showToast('ℹ️', 'Deploy on Netlify for HTTPS WebRTC camera & mic!');
+      }
+    }
+
+    function attachRemoteStream(remoteStream) {
+      const remoteVid = document.getElementById('remoteVideo');
+      remoteVid.srcObject = remoteStream;
+      remoteVid.classList.remove('hidden');
+      document.getElementById('remoteFallback').classList.add('hidden');
+    }
+
+    function sendSyncMessage(payload) {
+      try { if (State.conn && State.conn.open) State.conn.send(payload); } catch (e) {}
+      try { if (State.bc) State.bc.postMessage(payload); } catch (e) {}
+    }
+
+    function handleIncomingSyncMessage(msg) {
+      if (!msg || !msg.type) return;
+      if (msg.type === 'DICE_ROLL') { State.turn = msg.turn; triggerDiceRoll(msg.value, true); }
+      else if (msg.type === 'TOKEN_MOVE') { State.turn = msg.playerIdx; State.diceValue = msg.diceValue; State.phase = 'MOVE'; executeTokenMove(msg.playerIdx, msg.tokenIdx, true); }
+      else if (msg.type === 'CHAT_TEXT') { appendChatMessage('Partner', msg.text, false); spawnFloatingReaction('💬', msg.text); }
+      else if (msg.type === 'REACTION') { spawnFloatingReaction(msg.emoji, 'From Partner 💞'); }
+      else if (msg.type === 'RESET_MATCH') { resetMatch(msg.tokensPerPlayer || 4, false); }
+    }
+
+    function connectCoupleRoom(role) {
+      const code = (document.getElementById('secretCodeInput').value || 'LUDO99').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      State.roomCode = code;
+      State.myPlayerIdx = role === 'host' ? 0 : 1;
+      document.getElementById('roomCodeBadge').textContent = `${code} • LIVE`;
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          if (State.bc) State.bc.close();
+          State.bc = new BroadcastChannel('ishqludo_room_' + code);
+          State.bc.onmessage = (ev) => handleIncomingSyncMessage(ev.data);
+        }
+      } catch (e) {}
+      if (typeof Peer === 'undefined') return;
+      try { if (State.peer) State.peer.destroy(); } catch (e) {}
+      const hostId = `ishqludo-3d-${code.toLowerCase()}-host`;
+      const myId = role === 'host' ? hostId : `ishqludo-3d-${code.toLowerCase()}-guest-${Math.floor(100 + Math.random() * 899)}`;
+      const peer = new Peer(myId);
+      State.peer = peer;
+      peer.on('open', () => {
+        if (role === 'guest') {
+          const conn = peer.connect(hostId, { reliable: true });
+          bindConn(conn);
+        } else {
+          showToast('👑', `Room ${code} hosted! Waiting for partner...`);
+        }
+      });
+      peer.on('connection', (conn) => bindConn(conn));
+      peer.on('call', (call) => {
+        call.answer(State.localStream || undefined);
+        call.on('stream', (rs) => attachRemoteStream(rs));
+      });
+    }
+
+    function bindConn(conn) {
+      State.conn = conn;
+      conn.on('open', () => {
+        State.aiPartnerActive = false;
+        document.getElementById('aiPartnerLabel').textContent = '🤖 AI Partner: Off';
+        document.getElementById('connectModal').classList.add('hidden');
+        showToast('💞', `Connected with Partner in ${State.roomCode}!`);
+      });
+      conn.on('data', (d) => handleIncomingSyncMessage(d));
+    }
+
+    window.addEventListener('load', () => {
+      Scene3D.init();
+      setupBoardCanvasInteraction();
+      resetMatch(4, false);
+
+      document.getElementById('btnOpenConnectModal').addEventListener('click', () => document.getElementById('connectModal').classList.remove('hidden'));
+      document.getElementById('btnCloseConnectModal').addEventListener('click', () => document.getElementById('connectModal').classList.add('hidden'));
+      document.getElementById('btnStartSoloOrDemo').addEventListener('click', () => document.getElementById('connectModal').classList.add('hidden'));
+      document.getElementById('btnHostRoom').addEventListener('click', () => connectCoupleRoom('host'));
+      document.getElementById('btnJoinRoom').addEventListener('click', () => connectCoupleRoom('guest'));
+      document.getElementById('btnRollDice').addEventListener('click', () => triggerDiceRoll(null, false));
+      document.getElementById('btnToggleCam').addEventListener('click', toggleLocalCamera);
+      document.getElementById('btnThemeCycle').addEventListener('click', () => {
+        document.getElementById('themeNameLabel').textContent = Scene3D.cycleTheme();
+      });
+      document.getElementById('btnNewMatch').addEventListener('click', () => resetMatch(State.tokensPerPlayer, true));
+      document.getElementById('btnPlayAgainWin').addEventListener('click', () => resetMatch(State.tokensPerPlayer, true));
+      document.getElementById('btnEasyStartToggle').addEventListener('click', () => {
+        State.unlockOnOneOrSix = !State.unlockOnOneOrSix;
+        document.getElementById('easyStartLabel').textContent = State.unlockOnOneOrSix ? '⚡ Unlock on: 1 or 6' : '⚡ Unlock on: 6 Only';
+      });
+      document.querySelectorAll('.mode-btn').forEach((btn) => {
+        btn.addEventListener('click', () => resetMatch(Number(btn.dataset.tokens) || 4, true));
+      });
+      document.querySelectorAll('.reaction-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const emoji = btn.dataset.reaction || '❤️';
+          spawnFloatingReaction(emoji, 'Sent to Partner 💞');
+          sendSyncMessage({ type: 'REACTION', emoji });
+        });
+      });
+      document.querySelectorAll('.quick-chat-chip').forEach((chip) => {
+        chip.addEventListener('click', () => sendCoupleTextMessage(chip.dataset.quick || ''));
+      });
+      document.getElementById('btnSendChat').addEventListener('click', () => {
+        const input = document.getElementById('chatInput');
+        sendCoupleTextMessage(input.value);
+        input.value = '';
+      });
+      document.getElementById('chatInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const input = document.getElementById('chatInput');
+          sendCoupleTextMessage(input.value);
+          input.value = '';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
